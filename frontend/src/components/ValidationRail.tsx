@@ -23,12 +23,14 @@ export default function ValidationRail() {
     )
   }
   
-  const getPhaseStatus = (index: number) => {
-    if (status === 'success') return 'complete'
-    if (status === 'error') return 'error'
-    if (status === 'warning' && index === currentPhase) return 'warning'
+  const getPhaseStatus = (index: number): string => {
     if (index < currentPhase) return 'complete'
-    if (index === currentPhase && status === 'processing') return 'active'
+    if (index === currentPhase) {
+      if (status === 'processing') return 'active'
+      if (status === 'warning') return 'warning'
+      if (status === 'error') return 'error'
+      if (status === 'success') return 'complete'
+    }
     return 'pending'
   }
   
