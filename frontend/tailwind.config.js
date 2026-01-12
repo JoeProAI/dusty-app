@@ -1,0 +1,71 @@
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        bg: '#fafbfc',
+        surface: '#ffffff',
+        'surface-elevated': '#f5f7f9',
+        border: '#d4d8dd',
+        'border-strong': '#9ca3af',
+        text: '#1a1d21',
+        'text-secondary': '#4a5568',
+        'text-muted': '#718096',
+        accent: '#0066cc',
+        focus: '#0052a3',
+        success: '#047857',
+        warning: '#d97706',
+        danger: '#dc2626',
+        'data-primary': '#0066cc',
+        'data-secondary': '#6b7280',
+        'data-tertiary': '#94a3b8',
+      },
+      fontFamily: {
+        display: ['"IBM Plex Mono"', 'monospace'],
+        body: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'Consolas', 'monospace'],
+      },
+      fontSize: {
+        xs: '0.75rem',
+        sm: '0.875rem',
+        base: '1rem',
+        lg: '1.125rem',
+        xl: '1.25rem',
+        '2xl': '1.5rem',
+      },
+      spacing: {
+        1: '0.25rem',
+        2: '0.5rem',
+        3: '0.75rem',
+        4: '1rem',
+        6: '1.5rem',
+        8: '2rem',
+        12: '3rem',
+        16: '4rem',
+      },
+      borderRadius: {
+        sm: '0.125rem',
+        md: '0.25rem',
+        lg: '0.375rem',
+      },
+      boxShadow: {
+        sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        md: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+      },
+      transitionDuration: {
+        fast: '150ms',
+        base: '300ms',
+        slow: '500ms',
+      },
+      transitionTimingFunction: {
+        'out': 'cubic-bezier(0.33, 1, 0.68, 1)',
+        'spring': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+      },
+    },
+  },
+  plugins: [],
+}

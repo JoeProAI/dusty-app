@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: dusty-converter-backend
+    env: python
+    region: oregon
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: "https://your-app.vercel.app,https://your-app-*.vercel.app"
+      - key: DATABASE_URL
+        value: "sqlite+aiosqlite:///tmp/dusty_converter.db"
+    plan: starter
