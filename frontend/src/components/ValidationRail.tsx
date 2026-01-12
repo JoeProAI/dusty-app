@@ -14,7 +14,8 @@ export default function ValidationRail() {
   const location = useLocation()
   const isConverting = location.pathname.includes('/convert/')
   
-  const status: Status = 'dormant'
+  // TODO: Wire up to actual conversion state
+  const status = 'dormant' as Status
   const currentPhase = 0
   
   if (!isConverting) {
@@ -26,10 +27,13 @@ export default function ValidationRail() {
   const getPhaseStatus = (index: number): string => {
     if (index < currentPhase) return 'complete'
     if (index === currentPhase) {
-      if (status === 'processing') return 'active'
-      if (status === 'warning') return 'warning'
-      if (status === 'error') return 'error'
-      if (status === 'success') return 'complete'
+      switch (status) {
+        case 'processing': return 'active'
+        case 'warning': return 'warning'
+        case 'error': return 'error'
+        case 'success': return 'complete'
+        default: return 'pending'
+      }
     }
     return 'pending'
   }
