@@ -3,7 +3,8 @@ import axios from 'axios'
 const getApiBaseURL = () => {
   if (typeof window !== 'undefined') {
     const env = (import.meta as any).env
-    if (env?.PROD && env?.VITE_API_URL) {
+    // Always check VITE_API_URL first, regardless of environment
+    if (env?.VITE_API_URL) {
       return `${env.VITE_API_URL}/api`
     }
   }
