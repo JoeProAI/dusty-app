@@ -46,7 +46,7 @@ export default function StatusPipeline({ stages, compact = false }: StatusPipeli
     }
   }
 
-  const getConnectorColor = (currentStatus: StageStatus, nextStatus: StageStatus) => {
+  const getConnectorColor = (currentStatus: StageStatus) => {
     if (currentStatus === 'success') return 'bg-success'
     if (currentStatus === 'error') return 'bg-danger'
     if (currentStatus === 'warning') return 'bg-warning'
@@ -96,7 +96,7 @@ export default function StatusPipeline({ stages, compact = false }: StatusPipeli
                   <div
                     className={`
                       absolute inset-0 origin-left transition-all duration-slow
-                      ${getConnectorColor(stage.status, nextStage?.status || 'pending')}
+                      ${getConnectorColor(stage.status)}
                     `}
                     style={{
                       transform: stage.status === 'success' ? 'scaleX(1)' : 'scaleX(0)',
