@@ -58,7 +58,6 @@ export default function StatusPipeline({ stages, compact = false }: StatusPipeli
       <div className="flex items-center justify-between relative">
         {stages.map((stage, index) => {
           const isLast = index === stages.length - 1
-          const nextStage = !isLast ? stages[index + 1] : null
 
           return (
             <div key={stage.id} className="flex items-center flex-1 last:flex-none">
