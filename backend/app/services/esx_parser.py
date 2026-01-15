@@ -29,10 +29,12 @@ class ESXParser:
             file_list = zf.namelist()
             logger.info(f"ESX contains {len(file_list)} files: {file_list}")
             
-            xml_files = [f for f in file_list if f.endswith('.xml')]
+            # Case-insensitive XML file search
+            xml_files = [f for f in file_list if f.lower().endswith('.xml')]
             
             if not xml_files:
-                raise ValueError("No XML files found in ESX archive")
+                logger.error(f"No XML files found. Files in archive: {file_list}")
+                raise ValueError(f"No XML files found in ESX archive. Found {len(file_list)} files: {', '.join(file_list[:10])}")
             
             estimate_data = {}
             for xml_file in xml_files:
