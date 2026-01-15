@@ -3,6 +3,9 @@ import io
 import uuid
 import xmltodict
 import zlib
+import bz2
+import lzma
+import gzip
 from typing import Dict, Any
 import logging
 
@@ -73,6 +76,30 @@ class ESXParser:
                         try:
                             decompressed = zlib.decompress(nested_content)
                             logger.info(f"Successfully decompressed XACTDOC with zlib, size: {len(decompressed)} bytes")
+                        except:
+                            pass
+                    
+                    # Try bz2 decompression
+                    if not decompressed:
+                        try:
+                            decompressed = bz2.decompress(nested_content)
+                            logger.info(f"Successfully decompressed XACTDOC with bz2, size: {len(decompressed)} bytes")
+                        except:
+                            pass
+                    
+                    # Try lzma/xz decompression
+                    if not decompressed:
+                        try:
+                            decompressed = lzma.decompress(nested_content)
+                            logger.info(f"Successfully decompressed XACTDOC with lzma, size: {len(decompressed)} bytes")
+                        except:
+                            pass
+                    
+                    # Try gzip decompression
+                    if not decompressed:
+                        try:
+                            decompressed = gzip.decompress(nested_content)
+                            logger.info(f"Successfully decompressed XACTDOC with gzip, size: {len(decompressed)} bytes")
                         except:
                             pass
                     
