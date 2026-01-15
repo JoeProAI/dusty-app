@@ -36,12 +36,13 @@ class ESXParser:
             estimate_data = {}
             
             if xactdoc_files:
-                # Extract and parse nested ZIP
+                # Extract and parse nested XACTDOC file
                 logger.info(f"Found nested XACTDOC file: {xactdoc_files[0]}")
-                nested_zip_content = zf.read(xactdoc_files[0])
+                nested_content = zf.read(xactdoc_files[0])
                 
+                # Try as ZIP first
                 try:
-                    with zipfile.ZipFile(io.BytesIO(nested_zip_content)) as nested_zf:
+                    with zipfile.ZipFile(io.BytesIO(nested_content)) as nested_zf:
                         nested_file_list = nested_zf.namelist()
                         logger.info(f"Nested ZIP contains {len(nested_file_list)} files: {nested_file_list}")
                         
@@ -54,9 +55,16 @@ class ESXParser:
                                 estimate_data[xml_file] = parsed
                             except Exception as e:
                                 logger.warning(f"Could not parse {xml_file}: {e}")
-                except Exception as e:
-                    logger.error(f"Could not extract nested ZIP: {e}")
-                    raise ValueError(f"Failed to extract nested XACTDOC archive: {e}")
+                except zipfile.BadZipFile:
+                    # Not a ZIP file, try parsing as XML directly
+                    logger.info("XACTDOC file is not a ZIP, attempting to parse as XML directly")
+                    try:
+                        parsed = xmltodict.parse(nested_content)
+                        estimate_data[xactdoc_files[0]] = parsed
+                        xml_files = [xactdoc_files[0]]
+                    except Exception as e:
+                        logger.error(f"Failed to parse XACTDOC as XML: {e}")
+                        raise ValueError(f"XACTDOC file is neither a valid ZIP nor XML: {e}")
             else:
                 # Direct XML files in root
                 xml_files = [f for f in file_list if f.lower().endswith('.xml')]
