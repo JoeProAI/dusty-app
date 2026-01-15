@@ -60,9 +60,30 @@ class ESXParser:
                     # Not a ZIP file, try decompressing with zlib first
                     logger.info("XACTDOC file is not a ZIP, attempting to decompress with zlib")
                     try:
-                        decompressed = zlib.decompress(nested_content)
-                        logger.info(f"Successfully decompressed XACTDOC, size: {len(decompressed)} bytes")
-                        parsed = xmltodict.parse(decompressed)
+                        # Try raw DEFLATE decompression first (negative wbits = raw deflate)
+                        decompressed = zlib.decompress(nested_content, -zlib.MAX_WBITS)
+                        logger.info(f"Successfully decompressed XACTDOC with raw DEFLATE, size: {len(decompressed)} bytes")
+                        
+                        # Try different encodings and find XML start
+                        xml_content = None
+                        for encoding in ['utf-8', 'latin-1', 'utf-16', 'cp1252']:
+                            try:
+                                decoded = decompressed.decode(encoding)
+                                # Find XML start tag
+                                xml_start = decoded.find('<?xml')
+                                if xml_start == -1:
+                                    xml_start = decoded.find('<')
+                                if xml_start >= 0:
+                                    xml_content = decoded[xml_start:]
+                                    logger.info(f"Found XML content using {encoding} encoding at position {xml_start}")
+                                    break
+                            except:
+                                continue
+                        
+                        if not xml_content:
+                            xml_content = decompressed
+                        
+                        parsed = xmltodict.parse(xml_content)
                         estimate_data[xactdoc_files[0]] = parsed
                         xml_files = [xactdoc_files[0]]
                     except zlib.error:
@@ -76,6 +97,10 @@ class ESXParser:
                             logger.error(f"Failed to parse XACTDOC as XML: {e}")
                             logger.error(f"First 100 bytes: {nested_content[:100]}")
                             raise ValueError(f"XACTDOC file could not be parsed: {e}")
+                    except Exception as e:
+                        logger.error(f"Failed to process decompressed XACTDOC: {e}")
+                        logger.error(f"First 200 bytes of decompressed: {decompressed[:200] if 'decompressed' in locals() else 'N/A'}")
+                        raise ValueError(f"XACTDOC file could not be parsed: {e}")
             else:
                 # Direct XML files in root
                 xml_files = [f for f in file_list if f.lower().endswith('.xml')]
