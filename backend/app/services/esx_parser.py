@@ -2,6 +2,7 @@ import zipfile
 import io
 import uuid
 import xmltodict
+import zlib
 from typing import Dict, Any
 import logging
 
@@ -56,15 +57,25 @@ class ESXParser:
                             except Exception as e:
                                 logger.warning(f"Could not parse {xml_file}: {e}")
                 except zipfile.BadZipFile:
-                    # Not a ZIP file, try parsing as XML directly
-                    logger.info("XACTDOC file is not a ZIP, attempting to parse as XML directly")
+                    # Not a ZIP file, try decompressing with zlib first
+                    logger.info("XACTDOC file is not a ZIP, attempting to decompress with zlib")
                     try:
-                        parsed = xmltodict.parse(nested_content)
+                        decompressed = zlib.decompress(nested_content)
+                        logger.info(f"Successfully decompressed XACTDOC, size: {len(decompressed)} bytes")
+                        parsed = xmltodict.parse(decompressed)
                         estimate_data[xactdoc_files[0]] = parsed
                         xml_files = [xactdoc_files[0]]
-                    except Exception as e:
-                        logger.error(f"Failed to parse XACTDOC as XML: {e}")
-                        raise ValueError(f"XACTDOC file is neither a valid ZIP nor XML: {e}")
+                    except zlib.error:
+                        # Not compressed, try parsing as raw XML
+                        logger.info("Not compressed, attempting to parse as XML directly")
+                        try:
+                            parsed = xmltodict.parse(nested_content)
+                            estimate_data[xactdoc_files[0]] = parsed
+                            xml_files = [xactdoc_files[0]]
+                        except Exception as e:
+                            logger.error(f"Failed to parse XACTDOC as XML: {e}")
+                            logger.error(f"First 100 bytes: {nested_content[:100]}")
+                            raise ValueError(f"XACTDOC file could not be parsed: {e}")
             else:
                 # Direct XML files in root
                 xml_files = [f for f in file_list if f.lower().endswith('.xml')]
