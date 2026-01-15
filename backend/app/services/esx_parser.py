@@ -29,21 +29,49 @@ class ESXParser:
             file_list = zf.namelist()
             logger.info(f"ESX contains {len(file_list)} files: {file_list}")
             
-            # Case-insensitive XML file search
-            xml_files = [f for f in file_list if f.lower().endswith('.xml')]
+            # Check for nested XACTDOC.ZIPXML structure
+            xactdoc_files = [f for f in file_list if 'XACTDOC' in f.upper() and 'ZIP' in f.upper()]
+            
+            xml_files = []
+            estimate_data = {}
+            
+            if xactdoc_files:
+                # Extract and parse nested ZIP
+                logger.info(f"Found nested XACTDOC file: {xactdoc_files[0]}")
+                nested_zip_content = zf.read(xactdoc_files[0])
+                
+                try:
+                    with zipfile.ZipFile(io.BytesIO(nested_zip_content)) as nested_zf:
+                        nested_file_list = nested_zf.namelist()
+                        logger.info(f"Nested ZIP contains {len(nested_file_list)} files: {nested_file_list}")
+                        
+                        xml_files = [f for f in nested_file_list if f.lower().endswith('.xml')]
+                        
+                        for xml_file in xml_files:
+                            content = nested_zf.read(xml_file)
+                            try:
+                                parsed = xmltodict.parse(content)
+                                estimate_data[xml_file] = parsed
+                            except Exception as e:
+                                logger.warning(f"Could not parse {xml_file}: {e}")
+                except Exception as e:
+                    logger.error(f"Could not extract nested ZIP: {e}")
+                    raise ValueError(f"Failed to extract nested XACTDOC archive: {e}")
+            else:
+                # Direct XML files in root
+                xml_files = [f for f in file_list if f.lower().endswith('.xml')]
+                
+                for xml_file in xml_files:
+                    content = zf.read(xml_file)
+                    try:
+                        parsed = xmltodict.parse(content)
+                        estimate_data[xml_file] = parsed
+                    except Exception as e:
+                        logger.warning(f"Could not parse {xml_file}: {e}")
             
             if not xml_files:
                 logger.error(f"No XML files found. Files in archive: {file_list}")
                 raise ValueError(f"No XML files found in ESX archive. Found {len(file_list)} files: {', '.join(file_list[:10])}")
-            
-            estimate_data = {}
-            for xml_file in xml_files:
-                content = zf.read(xml_file)
-                try:
-                    parsed = xmltodict.parse(content)
-                    estimate_data[xml_file] = parsed
-                except Exception as e:
-                    logger.warning(f"Could not parse {xml_file}: {e}")
             
             metadata = self._extract_metadata(estimate_data)
             preview = self._create_preview(estimate_data)
