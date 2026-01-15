@@ -14,10 +14,14 @@ class Settings(BaseSettings):
     @classmethod
     def parse_cors_origins(cls, v):
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(',')]
+            # Handle empty string
+            if not v or not v.strip():
+                return ["http://localhost:5173", "http://localhost:3000"]
+            # Split comma-separated values
+            return [origin.strip() for origin in v.split(',') if origin.strip()]
         elif isinstance(v, list):
             return v
-        return v
+        return ["http://localhost:5173", "http://localhost:3000"]
     
     class Config:
         env_file = ".env"
