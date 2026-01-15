@@ -19,7 +19,7 @@ async def upload_esx_file(file: UploadFile = File(...)) -> Dict:
         - metadata: Basic file information
         - preview: Parsed estimate data preview
     """
-    if not file.filename.endswith('.esx'):
+    if not file.filename.lower().endswith('.esx'):
         raise HTTPException(status_code=400, detail="File must be an .esx file")
     
     try:
