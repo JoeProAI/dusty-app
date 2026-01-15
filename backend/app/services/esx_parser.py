@@ -57,12 +57,35 @@ class ESXParser:
                             except Exception as e:
                                 logger.warning(f"Could not parse {xml_file}: {e}")
                 except zipfile.BadZipFile:
-                    # Not a ZIP file, try decompressing with zlib first
-                    logger.info("XACTDOC file is not a ZIP, attempting to decompress with zlib")
+                    # Not a ZIP file, try multiple decompression methods
+                    logger.info("XACTDOC file is not a ZIP, attempting decompression")
+                    decompressed = None
+                    
+                    # Try raw DEFLATE decompression (used in PKZip)
                     try:
-                        # Try raw DEFLATE decompression first (negative wbits = raw deflate)
                         decompressed = zlib.decompress(nested_content, -zlib.MAX_WBITS)
                         logger.info(f"Successfully decompressed XACTDOC with raw DEFLATE, size: {len(decompressed)} bytes")
+                    except:
+                        pass
+                    
+                    # Try standard zlib decompression
+                    if not decompressed:
+                        try:
+                            decompressed = zlib.decompress(nested_content)
+                            logger.info(f"Successfully decompressed XACTDOC with zlib, size: {len(decompressed)} bytes")
+                        except:
+                            pass
+                    
+                    # Try skipping first 4 bytes (might be a header) and decompress
+                    if not decompressed and len(nested_content) > 4:
+                        try:
+                            decompressed = zlib.decompress(nested_content[4:], -zlib.MAX_WBITS)
+                            logger.info(f"Successfully decompressed XACTDOC after skipping header, size: {len(decompressed)} bytes")
+                        except:
+                            pass
+                    
+                    if decompressed:
+                        logger.info(f"Decompression successful, size: {len(decompressed)} bytes")
                         
                         # Try different encodings and find XML start
                         xml_content = None
@@ -86,7 +109,8 @@ class ESXParser:
                         parsed = xmltodict.parse(xml_content)
                         estimate_data[xactdoc_files[0]] = parsed
                         xml_files = [xactdoc_files[0]]
-                    except zlib.error:
+                    
+                    if not xml_files:
                         # Not compressed, try parsing as raw XML
                         logger.info("Not compressed, attempting to parse as XML directly")
                         try:
