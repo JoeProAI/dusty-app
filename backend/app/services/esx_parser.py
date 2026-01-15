@@ -142,16 +142,39 @@ class ESXParser:
                             logger.error(f"First 200 bytes of decompressed: {decompressed[:200]}")
                     
                     if not xml_files:
-                        # Not compressed, try parsing as raw XML
-                        logger.info("Not compressed, attempting to parse as XML directly")
+                        # Try searching for XML content in raw bytes (PKZip stored method)
+                        logger.info("Searching for XML markers in raw XACTDOC data")
                         try:
-                            parsed = xmltodict.parse(nested_content)
-                            estimate_data[xactdoc_files[0]] = parsed
-                            xml_files = [xactdoc_files[0]]
+                            # Search for common XML start patterns
+                            xml_start_markers = [b'<?xml', b'<EstimateFile', b'<Estimate', b'<Project', b'<Claim']
+                            found_xml = False
+                            
+                            for marker in xml_start_markers:
+                                pos = nested_content.find(marker)
+                                if pos >= 0:
+                                    logger.info(f"Found XML marker '{marker.decode()}' at position {pos}")
+                                    xml_data = nested_content[pos:]
+                                    # Try to find end of XML
+                                    xml_end_markers = [b'</EstimateFile>', b'</Estimate>', b'</Project>', b'</Claim>']
+                                    for end_marker in xml_end_markers:
+                                        end_pos = xml_data.find(end_marker)
+                                        if end_pos >= 0:
+                                            xml_data = xml_data[:end_pos + len(end_marker)]
+                                            break
+                                    
+                                    parsed = xmltodict.parse(xml_data)
+                                    estimate_data[xactdoc_files[0]] = parsed
+                                    xml_files = [xactdoc_files[0]]
+                                    found_xml = True
+                                    break
+                            
+                            if not found_xml:
+                                raise ValueError("No XML markers found in XACTDOC data")
                         except Exception as e:
-                            logger.error(f"Failed to parse XACTDOC as XML: {e}")
-                            logger.error(f"First 100 bytes: {nested_content[:100]}")
-                            raise ValueError(f"XACTDOC file could not be parsed: {e}")
+                            logger.error(f"Failed to extract XML from XACTDOC: {e}")
+                            logger.error(f"First 200 bytes: {nested_content[:200]}")
+                            logger.error(f"XACTDOC.ZIPXML uses proprietary Xactimate compression that cannot be decoded with standard libraries")
+                            raise ValueError(f"XACTDOC file uses proprietary compression format. Please contact Xactimate support for SDK/API access or export data in a different format.")
             else:
                 # Direct XML files in root
                 xml_files = [f for f in file_list if f.lower().endswith('.xml')]
